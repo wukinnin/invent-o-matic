@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Box, TextField, Button, Typography, Paper } from '@mui/material';
+import AuthContext from '../context/AuthContext';
 
 const LoginPage = () => {
+  const { login, isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -12,18 +22,9 @@ const LoginPage = () => {
 
   const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const onSubmit = async e => {
+  const onSubmit = e => {
     e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-      console.log('Login successful', res.data);
-      // Here we would typically save the token and redirect the user
-      // For now, we just log the token
-      alert('Login successful! Token: ' + res.data.token);
-    } catch (err) {
-      console.error(err.response ? err.response.data : err.message);
-      alert('Login failed. Check console for details.');
-    }
+    login(formData);
   };
 
   return (
