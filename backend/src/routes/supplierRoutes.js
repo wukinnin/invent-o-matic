@@ -9,6 +9,7 @@ const {
 } = require('../controllers/supplierController');
 const authMiddleware = require('../middleware/authMiddleware');
 const rbacMiddleware = require('../middleware/rbacMiddleware');
+const { supplierValidationRules, validateRequest } = require('../middleware/validationMiddleware');
 
 // @route   GET api/suppliers
 // @desc    Get all suppliers
@@ -23,12 +24,12 @@ router.get('/:id', authMiddleware, getSupplierById);
 // @route   POST api/suppliers
 // @desc    Create a supplier
 // @access  Private (Requires manage_suppliers permission)
-router.post('/', [authMiddleware, rbacMiddleware(['manage_suppliers'])], createSupplier);
+router.post('/', [authMiddleware, rbacMiddleware(['manage_suppliers']), supplierValidationRules(), validateRequest], createSupplier);
 
 // @route   PUT api/suppliers/:id
 // @desc    Update a supplier
 // @access  Private (Requires manage_suppliers permission)
-router.put('/:id', [authMiddleware, rbacMiddleware(['manage_suppliers'])], updateSupplier);
+router.put('/:id', [authMiddleware, rbacMiddleware(['manage_suppliers']), supplierValidationRules(), validateRequest], updateSupplier);
 
 // @route   DELETE api/suppliers/:id
 // @desc    Delete a supplier
