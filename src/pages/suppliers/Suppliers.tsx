@@ -47,7 +47,7 @@ const fetchSuppliers = async (tenantId: number): Promise<Supplier[]> => {
 const SuppliersPage = () => {
   const { profile } = useSession();
   const queryClient = useQueryClient();
-  const tenantId = profile?.tenant_id || 1;
+  const tenantId = profile?.tenant_id;
 
   const [isCreateEditDialogOpen, setCreateEditDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setArchiveDialogOpen] = useState(false);
@@ -56,7 +56,7 @@ const SuppliersPage = () => {
 
   const { data: suppliers, isLoading } = useQuery({
     queryKey: ['suppliers', tenantId],
-    queryFn: () => fetchSuppliers(tenantId),
+    queryFn: () => fetchSuppliers(tenantId!),
     enabled: !!tenantId,
   });
 
@@ -150,12 +150,12 @@ const SuppliersPage = () => {
         </CardContent>
       </Card>
 
-      <CreateEditSupplierDialog
+      {tenantId && <CreateEditSupplierDialog
         isOpen={isCreateEditDialogOpen}
         onOpenChange={setCreateEditDialogOpen}
         supplier={selectedSupplier}
         tenantId={tenantId}
-      />
+      />}
 
       <AlertDialog open={isArchiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>

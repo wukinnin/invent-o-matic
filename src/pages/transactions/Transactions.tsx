@@ -54,7 +54,7 @@ const fetchTransactions = async (tenantId: number): Promise<TransactionLogItem[]
 const TransactionsPage = () => {
   const { profile } = useSession();
   const queryClient = useQueryClient();
-  const tenantId = profile?.tenant_id || 1; // Using fallback for development
+  const tenantId = profile?.tenant_id;
   const userId = profile?.id;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,13 +68,13 @@ const TransactionsPage = () => {
   // Data queries
   const { data: items, isLoading: isLoadingItems } = useQuery({
     queryKey: ['inventoryItems', tenantId],
-    queryFn: () => fetchInventoryItems(tenantId),
+    queryFn: () => fetchInventoryItems(tenantId!),
     enabled: !!tenantId,
   });
 
   const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['transactions', tenantId],
-    queryFn: () => fetchTransactions(tenantId),
+    queryFn: () => fetchTransactions(tenantId!),
     enabled: !!tenantId,
   });
 

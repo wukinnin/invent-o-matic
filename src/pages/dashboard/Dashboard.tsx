@@ -20,9 +20,7 @@ const fetchDashboardData = async (tenantId: number) => {
 
 const Dashboard = () => {
   const { profile } = useSession();
-  // DEV NOTE: Bypassing auth, hardcoding tenant_id to 1 for development.
-  // This should be replaced with the logged-in user's tenant_id.
-  const tenantId = profile?.tenant_id || 1;
+  const tenantId = profile?.tenant_id;
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboardData', tenantId],
@@ -47,7 +45,7 @@ const Dashboard = () => {
           value={data?.low_stock_count ?? 0}
           isLoading={isLoading}
           valueColor={data?.low_stock_count > 0 ? 'text-red-600' : ''}
-          linkTo="#" // Placeholder for inventory page link
+          linkTo="/inventory"
         />
         <StatCard
           title="Transactions (30 Days)"

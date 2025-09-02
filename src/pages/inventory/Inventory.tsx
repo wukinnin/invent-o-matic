@@ -38,15 +38,14 @@ const fetchInventory = async (tenantId: number): Promise<InventoryItem[]> => {
 
 const InventoryPage = () => {
   const { profile } = useSession();
-  // DEV NOTE: Bypassing auth, hardcoding tenant_id to 1 for development.
-  const tenantId = profile?.tenant_id || 1;
+  const tenantId = profile?.tenant_id;
 
   const [isCreateEditDialogOpen, setCreateEditDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', tenantId],
-    queryFn: () => fetchInventory(tenantId),
+    queryFn: () => fetchInventory(tenantId!),
     enabled: !!tenantId,
   });
 
@@ -143,12 +142,12 @@ const InventoryPage = () => {
         </CardContent>
       </Card>
 
-      <CreateEditItemDialog
+      {tenantId && <CreateEditItemDialog
         isOpen={isCreateEditDialogOpen}
         onOpenChange={setCreateEditDialogOpen}
         item={selectedItem}
         tenantId={tenantId}
-      />
+      />}
     </div>
   );
 };
