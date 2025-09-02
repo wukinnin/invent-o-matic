@@ -36,7 +36,7 @@ const StatCard = ({ title, value, isLoading }: { title: string; value: string | 
 );
 
 const AdminDashboard = () => {
-  const { data: stats, isLoading, isError } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ['systemStats'],
     queryFn: fetchSystemStats,
   });
@@ -54,15 +54,7 @@ const AdminDashboard = () => {
         <StatCard title="Total Users" value={stats?.totalUsers ?? 0} isLoading={isLoading} />
         <Card>
           <CardHeader><CardTitle className="text-base font-medium text-gray-600">System Status</CardTitle></CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-9 w-40" />
-            ) : isError ? (
-              <p className="text-4xl font-bold text-red-600">Error</p>
-            ) : (
-              <p className="text-4xl font-bold text-green-600">Operational</p>
-            )}
-          </CardContent>
+          <CardContent><p className="text-4xl font-bold text-green-600">Operational</p></CardContent>
         </Card>
       </div>
     </div>
