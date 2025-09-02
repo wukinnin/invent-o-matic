@@ -11,7 +11,7 @@ const TenantSidebar = () => {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/inventory', icon: Package, label: 'Inventory', disabled: false },
     { to: '/suppliers', icon: Building, label: 'Suppliers', disabled: false },
-    { to: '#', icon: ArrowRightLeft, label: 'Transactions', disabled: true },
+    { to: '/transactions', icon: ArrowRightLeft, label: 'Transactions', disabled: false },
     { to: '#', icon: Users, label: 'User Management', disabled: true },
     { to: '#', icon: Settings, label: 'Settings', disabled: true },
   ];

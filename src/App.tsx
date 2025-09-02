@@ -17,6 +17,7 @@ import TenantLayout from "./components/layouts/TenantLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import InventoryPage from "./pages/inventory/Inventory";
 import SuppliersPage from "./pages/suppliers/Suppliers";
+import TransactionsPage from "./pages/transactions/Transactions";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/transactions" element={<TransactionsPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
