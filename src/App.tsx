@@ -16,6 +16,7 @@ import TenantManagement from "./pages/admin/TenantManagement";
 import TenantLayout from "./components/layouts/TenantLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import InventoryPage from "./pages/inventory/Inventory";
+import SuppliersPage from "./pages/suppliers/Suppliers";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route element={<TenantLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/suppliers" element={<SuppliersPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

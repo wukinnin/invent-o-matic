@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ const TenantSidebar = () => {
   const navLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/inventory', icon: Package, label: 'Inventory', disabled: false },
+    { to: '/suppliers', icon: Building, label: 'Suppliers', disabled: false },
     { to: '#', icon: ArrowRightLeft, label: 'Transactions', disabled: true },
     { to: '#', icon: Users, label: 'User Management', disabled: true },
     { to: '#', icon: Settings, label: 'Settings', disabled: true },
