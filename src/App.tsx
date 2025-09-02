@@ -13,7 +13,8 @@ import AdminRoute from "./components/auth/AdminRoute";
 import AdminLayout from "./components/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import TenantManagement from "./pages/admin/TenantManagement";
-import TenantDashboard from "./pages/dashboard/TenantDashboard";
+import TenantLayout from "./components/layouts/TenantLayout";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -27,12 +28,6 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            {/* 
-              DEVELOPMENT NOTE: 
-              Admin routes are temporarily public to bypass login for UI development.
-              This is insecure and MUST be reverted by wrapping this section in 
-              <ProtectedRoute> and <AdminRoute> before production.
-            */}
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/tenant-management" element={<TenantManagement />} />
@@ -41,10 +36,10 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route path="/set-password" element={<SetPassword />} />
 
-              {/* Admin Routes were here, now public for development */}
-
               {/* Tenant Routes */}
-              <Route path="/dashboard" element={<TenantDashboard />} />
+              <Route element={<TenantLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+              </Route>
               
               {/* Root redirect */}
               <Route path="/" element={<Index />} />
