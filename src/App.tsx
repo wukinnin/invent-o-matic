@@ -9,6 +9,11 @@ import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
 import { SessionProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/auth/AdminRoute";
+import AdminLayout from "./components/layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import TenantManagement from "./pages/admin/TenantManagement";
+import TenantDashboard from "./pages/dashboard/TenantDashboard";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +28,21 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Index />} />
               <Route path="/set-password" element={<SetPassword />} />
+
+              {/* Admin Routes */}
+              <Route element={<AdminRoute />}>
+                <Route element={<AdminLayout />}>
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/tenant-management" element={<TenantManagement />} />
+                </Route>
+              </Route>
+
+              {/* Tenant Routes */}
+              <Route path="/dashboard" element={<TenantDashboard />} />
+              
+              {/* Root redirect */}
+              <Route path="/" element={<Index />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

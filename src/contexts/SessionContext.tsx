@@ -5,11 +5,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 type UserProfile = {
   id: string;
-  tenant_id: number;
+  tenant_id: number | null;
   school_id: string;
   first_name: string | null;
   last_name: string | null;
-  is_manager: boolean;
+  role: 'STAFF' | 'MANAGER' | 'ADMIN';
   account_status: 'PENDING_ACTIVATION' | 'ACTIVE';
 };
 
@@ -73,7 +73,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       if (profile.account_status === 'PENDING_ACTIVATION' && location.pathname !== '/set-password') {
         navigate('/set-password');
       } else if (profile.account_status === 'ACTIVE' && (location.pathname === '/login' || location.pathname === '/set-password')) {
-        navigate('/');
+        if (profile.role === 'ADMIN') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       }
     }
   }, [profile, loading, navigate, location.pathname]);
