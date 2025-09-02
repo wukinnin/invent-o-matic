@@ -9,7 +9,7 @@ const TenantSidebar = () => {
 
   const navLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/inventory', icon: Package, label: 'Inventory' },
+    { to: '#', icon: Package, label: 'Inventory', disabled: true },
     { to: '#', icon: ArrowRightLeft, label: 'Transactions', disabled: true },
     { to: '#', icon: Users, label: 'User Management', disabled: true },
     { to: '#', icon: Settings, label: 'Settings', disabled: true },
