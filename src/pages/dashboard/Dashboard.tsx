@@ -20,7 +20,9 @@ const fetchDashboardData = async (tenantId: number) => {
 
 const Dashboard = () => {
   const { profile } = useSession();
-  const tenantId = profile?.tenant_id;
+  // DEV NOTE: Bypassing auth, hardcoding tenant_id to 1 for development.
+  // This should be replaced with the logged-in user's tenant_id.
+  const tenantId = profile?.tenant_id || 1;
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboardData', tenantId],

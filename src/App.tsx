@@ -35,14 +35,14 @@ const App = () => (
 
             <Route element={<ProtectedRoute />}>
               <Route path="/set-password" element={<SetPassword />} />
-
-              {/* Tenant Routes */}
-              <Route element={<TenantLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
               
               {/* Root redirect */}
               <Route path="/" element={<Index />} />
+            </Route>
+
+            {/* Tenant Routes - unprotected for development */}
+            <Route element={<TenantLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
