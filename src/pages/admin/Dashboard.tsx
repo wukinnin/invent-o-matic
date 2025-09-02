@@ -41,12 +41,6 @@ const AdminDashboard = () => {
     queryFn: fetchSystemStats,
   });
 
-  const recentActivity = [
-    { id: 1, description: 'Tenant "Faculty of Engineering" created.', time: '2 hours ago' },
-    { id: 2, description: 'Manager account for "J. Doe" provisioned for tenant "Faculty of Arts".', time: '8 hours ago' },
-    { id: 3, description: 'Tenant "College of Medicine" was deactivated.', time: '1 day ago' },
-  ];
-
   return (
     <div>
       <header className="pb-4 mb-8 border-b">
@@ -61,22 +55,6 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader><CardTitle className="text-base font-medium text-gray-600">System Status</CardTitle></CardHeader>
           <CardContent><p className="text-4xl font-bold text-green-600">Operational</p></CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-8">
-        <Card>
-          <CardHeader><CardTitle>Recent System Activity</CardTitle></CardHeader>
-          <CardContent>
-            <ul className="space-y-4">
-              {recentActivity.map((item) => (
-                <li key={item.id} className="pb-4 border-b last:border-b-0">
-                  <p>{item.description}</p>
-                  <span className="text-sm text-gray-500">{item.time}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
         </Card>
       </div>
     </div>
