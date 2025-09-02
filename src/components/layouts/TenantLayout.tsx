@@ -14,7 +14,7 @@ const TenantSidebar = () => {
     { to: '/suppliers', icon: Building, label: 'Suppliers' },
     { to: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
     { to: '/users', icon: Users, label: 'User Management', managerOnly: true },
-    { to: '#', icon: Settings, label: 'Settings', disabled: true },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (

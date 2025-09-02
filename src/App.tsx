@@ -20,6 +20,7 @@ import InventoryPage from "./pages/inventory/Inventory";
 import SuppliersPage from "./pages/suppliers/Suppliers";
 import TransactionsPage from "./pages/transactions/Transactions";
 import UserManagementPage from "./pages/users/UserManagement";
+import SettingsPage from "./pages/settings/Settings";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/transactions" element={<TransactionsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 
                 <Route element={<ManagerRoute />}>
                   <Route path="/users" element={<UserManagementPage />} />
