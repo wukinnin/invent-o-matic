@@ -105,7 +105,7 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
         
         {tempPassword ? (
           <div className="py-4 space-y-4">
-            <Alert variant="success">
+            <Alert>
               <AlertTitle>Manager Account Created!</AlertTitle>
               <AlertDescription>
                 Please securely deliver the following temporary password to the new manager. They will be required to change it upon first login.

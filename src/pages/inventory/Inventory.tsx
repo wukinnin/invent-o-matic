@@ -63,7 +63,7 @@ const InventoryPage = () => {
   const getStatusVariant = (status: InventoryItem['status']) => {
     switch (status) {
       case 'IN_STOCK': return 'success';
-      case 'LOW_STOCK': return 'warning';
+      case 'LOW_STOCK': return 'secondary';
       case 'OUT_OF_STOCK': return 'destructive';
       default: return 'secondary';
     }
