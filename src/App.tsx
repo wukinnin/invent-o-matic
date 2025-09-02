@@ -10,6 +10,7 @@ import SetPassword from "./pages/SetPassword";
 import { SessionProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
+import ManagerRoute from "./components/auth/ManagerRoute";
 import AdminLayout from "./components/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import TenantManagement from "./pages/admin/TenantManagement";
@@ -18,6 +19,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import InventoryPage from "./pages/inventory/Inventory";
 import SuppliersPage from "./pages/suppliers/Suppliers";
 import TransactionsPage from "./pages/transactions/Transactions";
+import UserManagementPage from "./pages/users/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -31,24 +33,27 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route element={<AdminLayout />}>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/tenant-management" element={<TenantManagement />} />
+            <Route element={<AdminRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/tenant-management" element={<TenantManagement />} />
+              </Route>
             </Route>
 
             <Route element={<ProtectedRoute />}>
               <Route path="/set-password" element={<SetPassword />} />
               
-              {/* Root redirect */}
-              <Route path="/" element={<Index />} />
-            </Route>
-
-            {/* Tenant Routes - unprotected for development */}
-            <Route element={<TenantLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/suppliers" element={<SuppliersPage />} />
-              <Route path="/transactions" element={<TransactionsPage />} />
+              <Route element={<TenantLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/inventory" element={<InventoryPage />} />
+                <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/transactions" element={<TransactionsPage />} />
+                
+                <Route element={<ManagerRoute />}>
+                  <Route path="/users" element={<UserManagementPage />} />
+                </Route>
+              </Route>
             </Route>
 
             <Route path="*" element={<NotFound />} />
