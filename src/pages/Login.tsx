@@ -44,8 +44,12 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMessage(null);
+    
+    // Convert School ID to the synthetic email format required by Supabase Auth
+    const syntheticEmail = `${data.schoolId}@invent-o-matic.local`;
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: data.schoolId,
+      email: syntheticEmail,
       password: data.password,
     });
 
