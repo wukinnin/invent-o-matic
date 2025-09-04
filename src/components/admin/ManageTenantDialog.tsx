@@ -171,7 +171,6 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
       }
       return (
         <form onSubmit={provisionForm.handleSubmit(data => provisionMutation.mutate(data))} className="space-y-4 pt-4">
-          <DialogDescription>This tenant needs an initial manager. Create their account below.</DialogDescription>
           <div className="space-y-2">
             <Label htmlFor="firstName">First Name</Label>
             <Input id="firstName" {...provisionForm.register('firstName')} />
