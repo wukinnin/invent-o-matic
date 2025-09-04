@@ -44,12 +44,8 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMessage(null);
-    
-    // Translate the user-entered School ID into the required proxy email format.
-    const email = `${data.schoolId}@invent-o-matic.local`;
-
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
+      email: data.schoolId,
       password: data.password,
     });
 
