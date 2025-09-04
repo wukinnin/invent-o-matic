@@ -1,8 +1,8 @@
 import { useSession } from '@/contexts/SessionContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const Index = () => {
+const ManagerRoute = () => {
   const { profile, loading } = useSession();
 
   if (loading) {
@@ -13,11 +13,11 @@ const Index = () => {
     );
   }
 
-  if (profile?.role === 'ADMIN') {
-    return <Navigate to="/admin/dashboard" replace />;
+  if (profile?.role !== 'MANAGER') {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
 };
 
-export default Index;
+export default ManagerRoute;
