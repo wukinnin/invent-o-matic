@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -44,8 +43,12 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMessage(null);
+    
+    // Construct the proxy email from the school ID, per the system design.
+    const proxyEmail = `${data.schoolId}@invent-o-matic.local`;
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: data.schoolId,
+      email: proxyEmail,
       password: data.password,
     });
 
@@ -72,7 +75,7 @@ const Login = () => {
                 <Label htmlFor="school-id">School ID</Label>
                 <Input
                   id="school-id"
-                  placeholder="Your 8-digit school ID"
+                  placeholder="Enter your School ID"
                   {...register('schoolId')}
                 />
                 {errors.schoolId && (
