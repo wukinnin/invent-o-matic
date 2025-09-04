@@ -3,12 +3,21 @@ import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Buil
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
+import React from 'react';
+
+type NavLinkItem = {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  managerOnly?: boolean;
+  disabled?: boolean;
+};
 
 const TenantSidebar = () => {
   const { profile, signOut } = useSession();
   const isManager = profile?.role === 'MANAGER';
 
-  const navLinks = [
+  const navLinks: NavLinkItem[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/inventory', icon: Package, label: 'Inventory' },
     { to: '/suppliers', icon: Building, label: 'Suppliers' },

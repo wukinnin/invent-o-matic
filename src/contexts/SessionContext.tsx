@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { showError } from '@/utils/toast';
 
 type UserProfile = {
   id: string;
@@ -29,17 +30,27 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
+
   useEffect(() => {
     const setData = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       if (currentSession?.user) {
-        const { data: userProfile } = await supabase
+        const { data: userProfile, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', currentSession.user.id)
           .single();
-        setProfile(userProfile);
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is handled below
+          console.error('Error fetching initial profile:', error);
+          showError('Failed to load your profile.');
+        } else {
+          setProfile(userProfile);
+        }
       }
       setLoading(false);
     };
@@ -55,8 +66,18 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           .select('*')
           .eq('id', newSession.user.id)
           .single()
-          .then(({ data }) => {
-            setProfile(data);
+          .then(({ data, error }) => {
+            if (error && error.code !== 'PGRST116') {
+              console.error("Error fetching profile on sign-in:", error);
+              showError("Could not fetch user profile. Logging out.");
+              signOut();
+            } else if (!data) {
+              console.error("No profile found for authenticated user.");
+              showError("Your user profile is missing. Please contact support. Logging out.");
+              signOut();
+            } else {
+              setProfile(data);
+            }
             setLoading(false);
           });
       } else if (event === 'SIGNED_OUT') {
@@ -66,7 +87,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, signOut]);
 
   useEffect(() => {
     if (!loading && profile) {
@@ -81,10 +102,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [profile, loading, navigate, location.pathname]);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
 
   const value = { session, profile, loading, signOut };
 
