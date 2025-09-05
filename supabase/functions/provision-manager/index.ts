@@ -51,7 +51,7 @@ serve(async (req) => {
     if (authError) {
       console.error('Auth user creation error:', authError);
       if (authError.message.includes('already exists')) {
-        return new Response(JSON.stringify({ error: 'A user with this School ID already exists.' }), {
+        return new Response(JSON.stringify({ error: 'A user with this School ID already exists in the system.' }), {
             status: 409,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
