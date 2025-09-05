@@ -99,7 +99,12 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
   const provisionMutation = useMutation({
     mutationFn: async (data: ManagerFormValues) => {
       const { data: result, error } = await supabase.functions.invoke('provision-manager', {
-        body: { tenant_id: tenant?.id, ...data },
+        body: {
+          tenant_id: tenant?.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          school_id: data.schoolId,
+        },
       });
       if (error) throw new Error(error.message);
       if (result.error) throw new Error(result.error);
