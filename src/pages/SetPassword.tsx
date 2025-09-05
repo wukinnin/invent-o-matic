@@ -30,7 +30,7 @@ const setPasswordSchema = z
 type SetPasswordFormValues = z.infer<typeof setPasswordSchema>;
 
 const SetPassword = () => {
-  const { session } = useSession();
+  const { session, refetchProfile } = useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -71,9 +71,9 @@ const SetPassword = () => {
 
     showSuccess('Account activated successfully! Redirecting...');
     
-    // Force a reload to refetch the user profile and trigger the redirect
-    // in SessionContext
-    window.location.reload();
+    // Manually refetch the profile to update the context
+    await refetchProfile();
+    // The useEffect in SessionContext will now handle the redirect.
   };
 
   return (

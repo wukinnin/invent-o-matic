@@ -18,6 +18,7 @@ type SessionContextType = {
   profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refetchProfile: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -82,11 +83,22 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [profile, loading, navigate, location.pathname]);
 
+  const refetchProfile = async () => {
+    if (session?.user) {
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      setProfile(userProfile);
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
-  const value = { session, profile, loading, signOut };
+  const value = { session, profile, loading, signOut, refetchProfile };
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 };
