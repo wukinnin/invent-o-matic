@@ -99,12 +99,7 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
   const provisionMutation = useMutation({
     mutationFn: async (data: ManagerFormValues) => {
       const { data: result, error } = await supabase.functions.invoke('provision-manager', {
-        body: {
-          tenant_id: tenant?.id,
-          first_name: data.firstName,
-          last_name: data.lastName,
-          school_id: data.schoolId,
-        },
+        body: { tenant_id: tenant?.id, ...data },
       });
       if (error) throw new Error(error.message);
       if (result.error) throw new Error(result.error);
@@ -114,6 +109,7 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
       showSuccess('Manager provisioned successfully!');
       setTempPassword(data.tempPassword);
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_managers', tenant?.id] });
     },
     onError: (error) => showError(`Failed to provision manager: ${error.message}`),
   });
@@ -152,29 +148,27 @@ export const ManageTenantDialog = ({ tenant, isOpen, onOpenChange }: ManageTenan
   };
 
   const renderContent = () => {
-    // Priority 1: Always show temp password if it exists
-    if (tempPassword) {
-      return (
-        <div className="py-4 space-y-4">
-          <Alert>
-            <AlertTitle>Manager Account Created!</AlertTitle>
-            <AlertDescription>Securely deliver this temporary password to the new manager.</AlertDescription>
-          </Alert>
-          <div className="flex items-center space-x-2">
-            <Input readOnly value={tempPassword} className="font-mono" />
-            <Button variant="outline" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4" /></Button>
-          </div>
-          <Button onClick={() => onOpenChange(false)} className="w-full">Done</Button>
-        </div>
-      );
-    }
-
     if (isLoadingManagers) {
       return <Skeleton className="h-64 w-full" />;
     }
 
     // State 1: No Manager Present (Provisioning)
     if (!managers || managers.length === 0) {
+      if (tempPassword) {
+        return (
+          <div className="py-4 space-y-4">
+            <Alert>
+              <AlertTitle>Manager Account Created!</AlertTitle>
+              <AlertDescription>Securely deliver this temporary password to the new manager.</AlertDescription>
+            </Alert>
+            <div className="flex items-center space-x-2">
+              <Input readOnly value={tempPassword} className="font-mono" />
+              <Button variant="outline" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4" /></Button>
+            </div>
+            <Button onClick={() => onOpenChange(false)} className="w-full">Done</Button>
+          </div>
+        );
+      }
       return (
         <form onSubmit={provisionForm.handleSubmit(data => provisionMutation.mutate(data))} className="space-y-4 pt-4">
           <DialogDescription>This tenant needs an initial manager. Create their account below.</DialogDescription>
