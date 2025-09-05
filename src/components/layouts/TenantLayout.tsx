@@ -1,14 +1,23 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
+import { ForwardRefExoticComponent, RefAttributes } from 'react';
+
+type NavLinkType = {
+  to: string;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+  label: string;
+  managerOnly?: boolean;
+  disabled?: boolean;
+};
 
 const TenantSidebar = () => {
   const { profile, signOut } = useSession();
   const isManager = profile?.role === 'MANAGER';
 
-  const navLinks = [
+  const navLinks: NavLinkType[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/inventory', icon: Package, label: 'Inventory' },
     { to: '/suppliers', icon: Building, label: 'Suppliers' },
