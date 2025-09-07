@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Building, Settings, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Building, Settings, LogOut, ChevronsLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -17,20 +17,25 @@ const AdminSidebar = () => {
   ];
 
   return (
-    <aside className={cn("bg-gray-900 text-gray-200 p-4 flex flex-col justify-between transition-all duration-300 ease-in-out", isCollapsed ? "w-20" : "w-64")}>
+    <aside className={cn(
+      "bg-gray-900 text-gray-200 p-4 flex flex-col justify-between transition-all duration-300 ease-in-out",
+      isCollapsed ? "w-20" : "w-60"
+    )}>
       <div>
         <div className="flex items-center justify-between mb-8">
-          <h2 className={cn("text-xl font-bold text-white transition-opacity whitespace-nowrap", isCollapsed ? "opacity-0 w-0" : "opacity-100")}>Invent O'Matic</h2>
+          {!isCollapsed && <h2 className="text-xl font-bold text-white">Invent O'Matic</h2>}
           <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className="text-gray-300 hover:bg-indigo-600 hover:text-white">
-            {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            <ChevronsLeft className={cn("h-5 w-5 transition-transform", isCollapsed && "rotate-180")} />
           </Button>
         </div>
-
-        <div className="mb-8 px-2 text-center space-y-1">
-          <div className={cn("font-semibold text-white truncate transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>
-            {profile?.first_name} {profile?.last_name}
-          </div>
-          <span className={cn("text-xs text-gray-400 uppercase transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>System Admin</span>
+        
+        <div className="mb-8 px-2">
+          {!isCollapsed && profile && (
+            <>
+              <p className="text-sm font-semibold text-white truncate">{profile.first_name} {profile.last_name}</p>
+              <span className="text-xs text-gray-400 uppercase">System Admin</span>
+            </>
+          )}
         </div>
 
         <nav className="flex flex-col space-y-2">
@@ -47,8 +52,8 @@ const AdminSidebar = () => {
                     )
                   }
                 >
-                  <link.icon className="h-5 w-5 flex-shrink-0" />
-                  <span className={cn("transition-all whitespace-nowrap", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>{link.label}</span>
+                  <link.icon className="h-5 w-5" />
+                  {!isCollapsed && <span>{link.label}</span>}
                 </NavLink>
               </TooltipTrigger>
               {isCollapsed && <TooltipContent side="right">{link.label}</TooltipContent>}
@@ -59,9 +64,9 @@ const AdminSidebar = () => {
       <div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" className={cn("w-full justify-start text-gray-300 hover:bg-indigo-600 hover:text-white", isCollapsed && "justify-center")} onClick={signOut}>
-              <LogOut className="h-5 w-5 flex-shrink-0" />
-              <span className={cn("ml-3 transition-all whitespace-nowrap", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Sign Out</span>
+            <Button variant="ghost" className={cn("w-full text-gray-300 hover:bg-indigo-600 hover:text-white", isCollapsed ? 'justify-center' : 'justify-start')} onClick={signOut}>
+              <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+              {!isCollapsed && <span>Sign Out</span>}
             </Button>
           </TooltipTrigger>
           {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
