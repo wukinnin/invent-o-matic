@@ -1,9 +1,12 @@
+import { useState, ForwardRefExoticComponent, RefAttributes } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ForwardRefExoticComponent, RefAttributes } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type NavLinkType = {
   to: string;
@@ -15,7 +18,26 @@ type NavLinkType = {
 
 const TenantSidebar = () => {
   const { profile, signOut } = useSession();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const isManager = profile?.role === 'MANAGER';
+
+  const { data: tenant } = useQuery({
+    queryKey: ['tenant', profile?.tenant_id],
+    queryFn: async () => {
+      if (!profile?.tenant_id) return null;
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('name')
+        .eq('id', profile.tenant_id)
+        .single();
+      if (error) {
+        console.error("Error fetching tenant name:", error);
+        return null;
+      };
+      return data;
+    },
+    enabled: !!profile?.tenant_id,
+  });
 
   const navLinks: NavLinkType[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,38 +49,65 @@ const TenantSidebar = () => {
   ];
 
   return (
-    <aside className="w-60 bg-gray-800 text-gray-100 p-4 flex flex-col">
-      <div className="mb-8 px-2">
-        <h2 className="text-xl font-bold text-white">Invent O'Matic</h2>
-        {profile && <span className="text-xs text-gray-400 uppercase">{profile.role}</span>}
-      </div>
-      <nav className="flex-1 flex flex-col space-y-1">
-        {navLinks.map((link) => {
-          if (link.managerOnly && !isManager) return null;
-          return (
-            <NavLink
-              key={link.label}
-              to={link.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center space-x-3 px-3 py-2 rounded-md font-medium text-gray-300 hover:bg-gray-700 hover:text-white',
-                  isActive && 'bg-gray-900 text-white',
-                  link.disabled && 'opacity-50 cursor-not-allowed'
-                )
-              }
-              onClick={(e) => link.disabled && e.preventDefault()}
-            >
-              <link.icon className="h-5 w-5" />
-              <span>{link.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+    <aside className={cn("bg-gray-800 text-gray-100 p-4 flex flex-col transition-all duration-300 ease-in-out", isCollapsed ? "w-20" : "w-64")}>
       <div>
-        <Button variant="ghost" className="w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white" onClick={signOut}>
-          <LogOut className="h-5 w-5 mr-3" />
-          Sign Out
-        </Button>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className={cn("text-xl font-bold text-white transition-opacity whitespace-nowrap", isCollapsed ? "opacity-0 w-0" : "opacity-100")}>Invent O'Matic</h2>
+          <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className="text-gray-300 hover:bg-gray-700 hover:text-white">
+            {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        <div className="mb-8 px-2 text-center space-y-1">
+          <div className={cn("font-semibold text-white truncate transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>
+            {profile?.first_name} {profile?.last_name}
+          </div>
+          {tenant && (
+            <div className={cn("text-sm text-gray-300 truncate transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>
+              {tenant.name}
+            </div>
+          )}
+          {profile && <span className={cn("text-xs text-gray-400 uppercase transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>{profile.role}</span>}
+        </div>
+
+        <nav className="flex-1 flex flex-col space-y-1">
+          {navLinks.map((link) => {
+            if (link.managerOnly && !isManager) return null;
+            return (
+              <Tooltip key={link.label}>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center space-x-3 px-3 py-2 rounded-md font-medium text-gray-300 hover:bg-gray-700 hover:text-white',
+                        isActive && 'bg-gray-900 text-white',
+                        link.disabled && 'opacity-50 cursor-not-allowed',
+                        isCollapsed && 'justify-center'
+                      )
+                    }
+                    onClick={(e) => link.disabled && e.preventDefault()}
+                  >
+                    <link.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className={cn("transition-all whitespace-nowrap", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>{link.label}</span>
+                  </NavLink>
+                </TooltipTrigger>
+                {isCollapsed && <TooltipContent side="right">{link.label}</TooltipContent>}
+              </Tooltip>
+            );
+          })}
+        </nav>
+      </div>
+      <div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" className={cn("w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white", isCollapsed && "justify-center")} onClick={signOut}>
+              <LogOut className="h-5 w-5 flex-shrink-0" />
+              <span className={cn("ml-3 transition-all whitespace-nowrap", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>Sign Out</span>
+            </Button>
+          </TooltipTrigger>
+          {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
+        </Tooltip>
       </div>
     </aside>
   );
