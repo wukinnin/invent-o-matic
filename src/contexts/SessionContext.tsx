@@ -46,6 +46,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           .single<UserProfile>();
         
         if (userProfile?.account_status === 'INACTIVE') {
+          navigate('/inactive');
           signOut();
         } else {
           setProfile(userProfile);
@@ -67,6 +68,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           .single<UserProfile>()
           .then(({ data }) => {
             if (data?.account_status === 'INACTIVE') {
+              navigate('/inactive');
               signOut();
             } else {
               setProfile(data);
@@ -75,12 +77,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           });
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
-        navigate('/login');
+        if (location.pathname !== '/inactive') {
+          navigate('/login');
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   useEffect(() => {
     if (!loading && profile) {

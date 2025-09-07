@@ -22,6 +22,7 @@ import SuppliersPage from "./pages/suppliers/Suppliers";
 import TransactionsPage from "./pages/transactions/Transactions";
 import UserManagementPage from "./pages/users/UserManagement";
 import SettingsPage from "./pages/settings/Settings";
+import InactiveUserPage from "./pages/InactiveUser";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
         <SessionProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/inactive" element={<InactiveUserPage />} />
             
             <Route element={<AdminRoute />}>
               <Route element={<AdminLayout />}>
