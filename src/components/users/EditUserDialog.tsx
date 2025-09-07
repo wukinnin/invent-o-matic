@@ -121,13 +121,13 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
   });
 
   const statusMutation = useMutation({
-    mutationFn: async (newStatus: 'ACTIVE' | 'DEACTIVATED') => {
+    mutationFn: async (newStatus: 'ACTIVE' | 'INACTIVE') => {
       if (!user) throw new Error('No user selected');
       const { error } = await supabase.from('users').update({ account_status: newStatus }).eq('id', user.id);
       if (error) throw error;
     },
     onSuccess: (data, newStatus) => {
-      showSuccess(`User has been ${newStatus.toLowerCase()}.`);
+      showSuccess(`User has been ${newStatus === 'INACTIVE' ? 'inactivated' : 'activated'}.`);
       queryClient.invalidateQueries({ queryKey: ['tenant_users', tenantId] });
       setDeactivateAlertOpen(false);
     },
@@ -245,12 +245,12 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="font-semibold">Account Status</h4>
-                  <p className="text-sm text-gray-600">Deactivating an account will prevent the user from logging in.</p>
+                  <p className="text-sm text-gray-600">Inactivating an account will prevent the user from logging in.</p>
                 </div>
                 <AlertDialog open={isDeactivateAlertOpen} onOpenChange={setDeactivateAlertOpen}>
                   <AlertDialogTrigger asChild>
                     {user.account_status === 'ACTIVE' ? (
-                      <Button variant="destructive">Deactivate User</Button>
+                      <Button variant="destructive">Inactivate User</Button>
                     ) : (
                       <Button variant="secondary">Reactivate User</Button>
                     )}
@@ -267,7 +267,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => statusMutation.mutate(user.account_status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE')}
+                        onClick={() => statusMutation.mutate(user.account_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
                         disabled={statusMutation.isPending}
                       >
                         {statusMutation.isPending ? 'Updating...' : 'Confirm'}

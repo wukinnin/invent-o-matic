@@ -24,7 +24,7 @@ export type TenantUser = {
   last_name: string;
   school_id: string;
   role: 'STAFF' | 'MANAGER';
-  account_status: 'ACTIVE' | 'PENDING_ACTIVATION' | 'DEACTIVATED';
+  account_status: 'ACTIVE' | 'PENDING_ACTIVATION' | 'INACTIVE';
   permissions: string[];
 };
 
@@ -57,7 +57,7 @@ const UserManagementPage = () => {
     switch (status) {
       case 'ACTIVE': return 'success';
       case 'PENDING_ACTIVATION': return 'secondary';
-      case 'DEACTIVATED': return 'outline';
+      case 'INACTIVE': return 'outline';
       default: return 'secondary';
     }
   };

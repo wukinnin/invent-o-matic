@@ -10,7 +10,7 @@ type UserProfile = {
   first_name: string | null;
   last_name: string | null;
   role: 'STAFF' | 'MANAGER' | 'ADMIN';
-  account_status: 'PENDING_ACTIVATION' | 'ACTIVE';
+  account_status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE';
 };
 
 type SessionContextType = {
@@ -30,6 +30,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   useEffect(() => {
     const setData = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -39,8 +43,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           .from('users')
           .select('*')
           .eq('id', currentSession.user.id)
-          .single();
-        setProfile(userProfile);
+          .single<UserProfile>();
+        
+        if (userProfile?.account_status === 'INACTIVE') {
+          signOut();
+        } else {
+          setProfile(userProfile);
+        }
       }
       setLoading(false);
     };
@@ -55,9 +64,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           .from('users')
           .select('*')
           .eq('id', newSession.user.id)
-          .single()
+          .single<UserProfile>()
           .then(({ data }) => {
-            setProfile(data);
+            if (data?.account_status === 'INACTIVE') {
+              signOut();
+            } else {
+              setProfile(data);
+            }
             setLoading(false);
           });
       } else if (event === 'SIGNED_OUT') {
@@ -89,13 +102,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         .from('users')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .single<UserProfile>();
       setProfile(userProfile);
     }
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
   };
 
   const value = { session, profile, loading, signOut, refetchProfile };
