@@ -68,7 +68,7 @@ const TenantSidebar = () => {
           )}
         </div>
 
-        <nav className="flex flex-col space-y-2">
+        <nav className="flex-1 flex flex-col space-y-2">
           {navLinks.map((link) => {
             if (link.managerOnly && !isManager) return null;
             return (
@@ -96,7 +96,7 @@ const TenantSidebar = () => {
           })}
         </nav>
       </div>
-      <div className="pt-3 mt-auto border-t border-gray-700">
+      <div className="pt-3 mt-3 border-t border-gray-700">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" className={cn("w-full flex items-center gap-3 text-gray-300 hover:bg-gray-700 hover:text-white", isCollapsed ? 'justify-center px-0' : 'justify-start')} onClick={signOut}>
