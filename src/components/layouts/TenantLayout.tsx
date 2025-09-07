@@ -58,7 +58,7 @@ const TenantSidebar = () => {
           </Button>
         </div>
 
-        <div className="mb-8 px-2 space-y-1">
+        <div className="mb-8 px-2 text-center space-y-1">
           <div className={cn("font-semibold text-white truncate transition-opacity", isCollapsed ? "opacity-0 h-0" : "opacity-100")}>
             {profile?.first_name} {profile?.last_name}
           </div>
