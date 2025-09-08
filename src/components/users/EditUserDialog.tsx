@@ -192,7 +192,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
                 )}
               />
             ) : (
-              <Alert variant="info">
+              <Alert>
                 <AlertDescription>
                   {isSelf ? "You cannot change your own role." : "The role of a Manager can only be changed by a System Admin."}
                 </AlertDescription>
