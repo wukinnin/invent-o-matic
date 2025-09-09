@@ -1,6 +1,6 @@
 import { useState, ForwardRefExoticComponent, RefAttributes } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps, ChevronsLeft } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps, ChevronsLeft, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,12 @@ const fetchTenantName = async (tenantId: number) => {
   return data?.name;
 };
 
+const fetchLocationName = async (locationId: number) => {
+  const { data, error } = await supabase.from('locations').select('name').eq('id', locationId).single();
+  if (error) throw error;
+  return data?.name;
+};
+
 const TenantSidebar = () => {
   const { profile, signOut } = useSession();
   const isManager = profile?.role === 'MANAGER';
@@ -31,6 +37,12 @@ const TenantSidebar = () => {
     queryKey: ['tenantName', profile?.tenant_id],
     queryFn: () => fetchTenantName(profile!.tenant_id!),
     enabled: !!profile?.tenant_id,
+  });
+
+  const { data: locationName } = useQuery({
+    queryKey: ['locationName', profile?.location_id],
+    queryFn: () => fetchLocationName(profile!.location_id!),
+    enabled: !!profile?.location_id,
   });
 
   const navLinks: NavLinkType[] = [
@@ -63,6 +75,12 @@ const TenantSidebar = () => {
             <div className="space-y-1">
               <p className="text-sm font-semibold text-white truncate">{profile.first_name} {profile.last_name}</p>
               {tenantName && <p className="text-xs text-gray-300 truncate">{tenantName}</p>}
+              {locationName && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-300">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{locationName}</span>
+                </div>
+              )}
               <span className="text-xs text-gray-400 uppercase">{profile.role}</span>
             </div>
           )}
