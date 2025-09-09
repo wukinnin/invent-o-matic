@@ -10,7 +10,7 @@ type UserProfile = {
   first_name: string | null;
   last_name: string | null;
   role: 'STAFF' | 'MANAGER' | 'ADMIN';
-  account_status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE';
+  account_status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE' | 'FORCE_PASSWORD_RESET';
 };
 
 type SessionContextType = {
@@ -88,7 +88,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!loading && profile) {
-      if (profile.account_status === 'PENDING_ACTIVATION' && location.pathname !== '/set-password') {
+      if (
+        (profile.account_status === 'PENDING_ACTIVATION' || profile.account_status === 'FORCE_PASSWORD_RESET') && 
+        location.pathname !== '/set-password'
+      ) {
         navigate('/set-password');
       } else if (profile.account_status === 'ACTIVE' && (location.pathname === '/login' || location.pathname === '/set-password')) {
         if (profile.role === 'ADMIN') {
