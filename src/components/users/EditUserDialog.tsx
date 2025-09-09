@@ -2,30 +2,13 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,14 +16,17 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ALL_PERMISSIONS, PERMISSION_DESCRIPTIONS, Permission } from '@/constants/permissions';
 import { TenantUser } from '@/pages/users/UserManagement';
+import { Location } from '@/components/settings/LocationsManager';
 
 const editUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(['STAFF', 'MANAGER']),
   permissions: z.array(z.string()),
+  locationId: z.string().optional(),
 });
 
 type EditUserFormValues = z.infer<typeof editUserSchema>;
@@ -66,12 +52,23 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
     control,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
   });
 
   const watchedRole = watch('role');
+
+  const { data: locations, isLoading: isLoadingLocations } = useQuery<Location[]>({
+    queryKey: ['locations', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('locations').select('id, name').eq('tenant_id', tenantId).eq('is_archived', false);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tenantId && isOpen,
+  });
 
   useEffect(() => {
     if (user) {
@@ -80,26 +77,37 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
         lastName: user.last_name || '',
         role: user.role,
         permissions: user.permissions || [],
+        locationId: user.location_id ? String(user.location_id) : 'NONE',
       });
     }
   }, [user, reset]);
+
+  useEffect(() => {
+    if (watchedRole === 'MANAGER') {
+      setValue('locationId', 'NONE');
+    }
+  }, [watchedRole, setValue]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditUserFormValues) => {
       if (!user) throw new Error('No user selected');
 
-      // 1. Update user's name and role
+      const location_id = data.locationId && data.locationId !== 'NONE' ? parseInt(data.locationId) : null;
+
       const { error: userUpdateError } = await supabase
         .from('users')
-        .update({ first_name: data.firstName, last_name: data.lastName, role: data.role })
+        .update({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          role: data.role,
+          location_id: location_id,
+        })
         .eq('id', user.id);
       if (userUpdateError) throw userUpdateError;
 
-      // 2. Clear existing permissions
       const { error: deleteError } = await supabase.from('user_permissions').delete().eq('user_id', user.id);
       if (deleteError) throw deleteError;
 
-      // 3. Insert new permissions if they are now Staff
       if (data.role === 'STAFF' && data.permissions.length > 0) {
         const newPermissions = data.permissions.map(p => ({
           user_id: user.id,
@@ -126,7 +134,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
       const { error } = await supabase.from('users').update({ account_status: newStatus }).eq('id', user.id);
       if (error) throw error;
     },
-    onSuccess: (data, newStatus) => {
+    onSuccess: (_, newStatus) => {
       showSuccess(`User has been ${newStatus === 'INACTIVE' ? 'inactivated' : 'activated'}.`);
       queryClient.invalidateQueries({ queryKey: ['tenant_users', tenantId] });
       setDeactivateAlertOpen(false);
@@ -153,7 +161,6 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
           <DialogDescription>Update user details, role, and permissions.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} id="edit-user-form" className="space-y-4 pt-4">
-          {/* User Details */}
           <div>
             <h3 className="font-semibold mb-2 text-gray-800">User Details</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -168,11 +175,26 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
                 {errors.lastName && <p className="text-sm text-red-600">{errors.lastName.message}</p>}
               </div>
             </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="locationId">Location</Label>
+              <Controller
+                name="locationId"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations || watchedRole === 'MANAGER'}>
+                    <SelectTrigger><SelectValue placeholder="Select a location..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Tenant-wide Access</SelectItem>
+                      {locations?.map(loc => <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
 
           <Separator />
 
-          {/* Role Management */}
           <div>
             <h3 className="font-semibold mb-2 text-gray-800">Role</h3>
             {canEditRoleAndStatus ? (
@@ -202,7 +224,6 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
 
           <Separator />
 
-          {/* Permissions */}
           <div>
             <h3 className="font-semibold mb-2 text-gray-800">Permissions</h3>
             {showPermissions ? (
@@ -237,7 +258,6 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
           </div>
         </form>
 
-        {/* Danger Zone */}
         {canEditRoleAndStatus && (
           <Card className="mt-6 border-red-500">
             <CardHeader><CardTitle className="text-red-700">Danger Zone</CardTitle></CardHeader>

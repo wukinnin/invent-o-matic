@@ -26,6 +26,7 @@ export type TenantUser = {
   role: 'STAFF' | 'MANAGER';
   account_status: 'ACTIVE' | 'PENDING_ACTIVATION' | 'INACTIVE';
   permissions: string[];
+  location_id: number | null;
 };
 
 const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
