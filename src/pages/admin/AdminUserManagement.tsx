@@ -39,8 +39,8 @@ const AdminUserManagementPage = () => {
     return (
         <div>
             <header className="pb-4 mb-8 border-b">
-                <h1 className="text-3xl font-bold">Tenant User Management</h1>
-                <p className="text-gray-600 mt-1">View users and perform administrative actions for a selected tenant.</p>
+                <h1 className="text-3xl font-bold">User Management</h1>
+                <p className="text-gray-600 mt-1">Select a tenant to view and manage its users.</p>
             </header>
 
             <div className="mb-6 max-w-sm">
