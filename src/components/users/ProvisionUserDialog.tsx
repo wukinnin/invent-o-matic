@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,23 +16,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Location } from '@/components/settings/LocationsManager';
 
-const provisionUserSchema = z.object({
+const baseSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   schoolId: z.string().regex(/^\d{8}$/, 'School ID must be 8 digits'),
   isManager: z.boolean().default(false),
   locationId: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (!data.isManager && !data.locationId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Please select a location for this staff member.",
-      path: ['locationId'],
-    });
-  }
 });
 
-type ProvisionUserFormValues = z.infer<typeof provisionUserSchema>;
+type ProvisionUserFormValues = z.infer<typeof baseSchema>;
 
 interface ProvisionUserDialogProps {
   isOpen: boolean;
@@ -43,6 +35,28 @@ interface ProvisionUserDialogProps {
 export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: ProvisionUserDialogProps) => {
   const queryClient = useQueryClient();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  const { data: locations, isLoading: isLoadingLocations } = useQuery<Location[]>({
+    queryKey: ['locations', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('locations').select('id, name').eq('tenant_id', tenantId).eq('is_archived', false);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tenantId && isOpen,
+  });
+
+  const provisionUserSchema = useMemo(() => {
+    return baseSchema.superRefine((data, ctx) => {
+      if (locations && locations.length > 0 && !data.isManager && !data.locationId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select a location for this staff member.",
+          path: ['locationId'],
+        });
+      }
+    });
+  }, [locations]);
 
   const {
     register,
@@ -64,16 +78,6 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
       setValue('locationId', undefined);
     }
   }, [isManager, setValue]);
-
-  const { data: locations, isLoading: isLoadingLocations } = useQuery<Location[]>({
-    queryKey: ['locations', tenantId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('locations').select('id, name').eq('tenant_id', tenantId).eq('is_archived', false);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenantId && isOpen,
-  });
 
   const mutation = useMutation({
     mutationFn: async (data: ProvisionUserFormValues) => {
@@ -175,22 +179,24 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
               />
               <Label htmlFor="isManager">Make this user a Manager</Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="locationId">Assign to Location</Label>
-              <Controller
-                name="locationId"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations || isManager}>
-                    <SelectTrigger><SelectValue placeholder="Select a location..." /></SelectTrigger>
-                    <SelectContent>
-                      {locations?.map(loc => <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.locationId && <p className="text-sm text-red-600">{errors.locationId.message}</p>}
-            </div>
+            {locations && locations.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="locationId">Assign to Location</Label>
+                <Controller
+                  name="locationId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations || isManager}>
+                      <SelectTrigger><SelectValue placeholder="Select a location..." /></SelectTrigger>
+                      <SelectContent>
+                        {locations?.map(loc => <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.locationId && <p className="text-sm text-red-600">{errors.locationId.message}</p>}
+              </div>
+            )}
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={handleDialogClose}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
