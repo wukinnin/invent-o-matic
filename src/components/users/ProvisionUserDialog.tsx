@@ -22,6 +22,14 @@ const provisionUserSchema = z.object({
   schoolId: z.string().regex(/^\d{8}$/, 'School ID must be 8 digits'),
   isManager: z.boolean().default(false),
   locationId: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.isManager && !data.locationId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select a location for this staff member.",
+      path: ['locationId'],
+    });
+  }
 });
 
 type ProvisionUserFormValues = z.infer<typeof provisionUserSchema>;
@@ -53,7 +61,7 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
 
   useEffect(() => {
     if (isManager) {
-      setValue('locationId', 'NONE');
+      setValue('locationId', undefined);
     }
   }, [isManager, setValue]);
 
@@ -76,7 +84,7 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
           last_name: data.lastName,
           school_id: data.schoolId,
           role: data.isManager ? 'MANAGER' : 'STAFF',
-          location_id: data.locationId && data.locationId !== 'NONE' ? parseInt(data.locationId) : null,
+          location_id: data.locationId ? parseInt(data.locationId) : null,
         },
       });
       if (error) throw new Error(error.message);
@@ -176,12 +184,12 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations || isManager}>
                     <SelectTrigger><SelectValue placeholder="Select a location..." /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="NONE">Tenant-wide Access</SelectItem>
                       {locations?.map(loc => <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}
               />
+              {errors.locationId && <p className="text-sm text-red-600">{errors.locationId.message}</p>}
             </div>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={handleDialogClose}>Cancel</Button>
