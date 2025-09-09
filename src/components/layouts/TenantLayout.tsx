@@ -1,6 +1,6 @@
 import { useState, ForwardRefExoticComponent, RefAttributes } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps, ChevronsLeft, MapPin } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, Users, ArrowRightLeft, Building, LucideProps, ChevronsLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,6 @@ const TenantSidebar = () => {
     { to: '/suppliers', icon: Building, label: 'Suppliers' },
     { to: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
     { to: '/users', icon: Users, label: 'User Management', managerOnly: true },
-    { to: '/locations', icon: MapPin, label: 'Locations', managerOnly: true },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
@@ -97,7 +96,7 @@ const TenantSidebar = () => {
           })}
         </nav>
       </div>
-      <div className="pt-3 mt-auto border-t border-gray-700">
+      <div className="pt-3 mt-3 border-t border-gray-700">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" className={cn("w-full flex items-center gap-3 text-gray-300 hover:bg-gray-700 hover:text-white", isCollapsed ? 'justify-center px-0' : 'justify-start')} onClick={signOut}>
