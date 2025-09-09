@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { tenant_id, first_name, last_name, school_id, role, location_id } = await req.json();
+    const { tenant_id, first_name, last_name, school_id, role } = await req.json();
 
     if (!tenant_id || !first_name || !last_name || !school_id || !role) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -76,7 +76,6 @@ serve(async (req) => {
       last_name,
       school_id,
       role,
-      location_id: location_id,
       account_status: 'PENDING_ACTIVATION',
     });
 
