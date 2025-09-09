@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Copy, KeyRound } from 'lucide-react';
+import { Copy, KeyRound, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,8 +32,15 @@ type TenantUser = {
   id: string;
   first_name: string;
   last_name: string;
+  school_id: string;
   role: 'STAFF' | 'MANAGER';
   account_status: string;
+  location_id: number | null;
+};
+
+type Location = {
+    id: number;
+    name: string;
 };
 
 interface AdminUserTableProps {
@@ -41,8 +48,17 @@ interface AdminUserTableProps {
     tenantName?: string;
 }
 
+type SortKey = 'name' | 'school_id' | 'location';
+type SortDirection = 'asc' | 'desc';
+
 const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
-    const { data, error } = await supabase.from('users').select('id, first_name, last_name, role, account_status').eq('tenant_id', tenantId);
+    const { data, error } = await supabase.from('users').select('id, first_name, last_name, school_id, role, account_status, location_id').eq('tenant_id', tenantId);
+    if (error) throw new Error(error.message);
+    return data;
+};
+
+const fetchLocations = async (tenantId: number): Promise<Location[]> => {
+    const { data, error } = await supabase.from('locations').select('id, name').eq('tenant_id', tenantId).eq('is_archived', false);
     if (error) throw new Error(error.message);
     return data;
 };
@@ -50,10 +66,16 @@ const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
 export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) => {
     const [tempPassword, setTempPassword] = useState<string | null>(null);
     const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'name', direction: 'asc' });
     
-    const { data: users, isLoading } = useQuery({
+    const { data: users, isLoading: isLoadingUsers } = useQuery({
         queryKey: ['admin_tenant_users', tenantId],
         queryFn: () => fetchTenantUsers(tenantId),
+    });
+
+    const { data: locations, isLoading: isLoadingLocations } = useQuery({
+        queryKey: ['locations', tenantId],
+        queryFn: () => fetchLocations(tenantId),
     });
 
     const passwordResetMutation = useMutation({
@@ -75,12 +97,60 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
         },
     });
 
+    const locationMap = useMemo(() => {
+        if (!locations) return new Map();
+        return new Map(locations.map(loc => [loc.id, loc.name]));
+    }, [locations]);
+
+    const sortedUsers = useMemo(() => {
+        if (!users) return [];
+        const sortableUsers = [...users];
+        sortableUsers.sort((a, b) => {
+            let aValue: string, bValue: string;
+            if (sortConfig.key === 'name') {
+                aValue = `${a.first_name} ${a.last_name}`.toLowerCase();
+                bValue = `${b.first_name} ${b.last_name}`.toLowerCase();
+            } else if (sortConfig.key === 'school_id') {
+                aValue = a.school_id;
+                bValue = b.school_id;
+            } else if (sortConfig.key === 'location') {
+                aValue = a.location_id ? locationMap.get(a.location_id) ?? '' : 'Tenant-wide';
+                bValue = b.location_id ? locationMap.get(b.location_id) ?? '' : 'Tenant-wide';
+            } else {
+                return 0;
+            }
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+        return sortableUsers;
+    }, [users, sortConfig, locationMap]);
+
+    const requestSort = (key: SortKey) => {
+        let direction: SortDirection = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key: SortKey) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'asc' 
+          ? <ArrowUp className="ml-2 h-4 w-4 inline" /> 
+          : <ArrowDown className="ml-2 h-4 w-4 inline" />;
+    };
+
     const copyToClipboard = () => {
         if (tempPassword) {
             navigator.clipboard.writeText(tempPassword);
             showSuccess('Password copied!');
         }
     };
+
+    const isLoading = isLoadingUsers || isLoadingLocations;
+    const hasLocations = locations && locations.length > 0;
 
     return (
         <>
@@ -92,7 +162,9 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('name')} className="px-0 hover:bg-transparent">Name {getSortIcon('name')}</Button></TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('school_id')} className="px-0 hover:bg-transparent">School ID {getSortIcon('school_id')}</Button></TableHead>
+                                {hasLocations && <TableHead><Button variant="ghost" onClick={() => requestSort('location')} className="px-0 hover:bg-transparent">Location {getSortIcon('location')}</Button></TableHead>}
                                 <TableHead>Role</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -100,11 +172,13 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4}><Skeleton className="h-20 w-full" /></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={hasLocations ? 6 : 5}><Skeleton className="h-20 w-full" /></TableCell></TableRow>
                             ) : (
-                                users?.map(user => (
+                                sortedUsers.map(user => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.first_name} {user.last_name}</TableCell>
+                                        <TableCell>{user.school_id}</TableCell>
+                                        {hasLocations && <TableCell>{user.location_id ? locationMap.get(user.location_id) ?? 'N/A' : 'Tenant-wide'}</TableCell>}
                                         <TableCell><Badge variant={user.role === 'MANAGER' ? 'default' : 'secondary'}>{user.role}</Badge></TableCell>
                                         <TableCell><Badge variant="outline">{user.account_status.replace(/_/g, ' ')}</Badge></TableCell>
                                         <TableCell className="text-right">
