@@ -54,7 +54,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Could not verify invoker role' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (invokerProfile.role !== 'ADMIN') {
+    if (invokerProfile.role !== 'MANAGER' && invokerProfile.role !== 'ADMIN') {
       return new Response(JSON.stringify({ error: 'Forbidden: Insufficient privileges' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
