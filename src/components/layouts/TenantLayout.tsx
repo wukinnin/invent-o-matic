@@ -75,12 +75,12 @@ const TenantSidebar = () => {
             <div className="space-y-1">
               <p className="text-sm font-semibold text-white truncate">{profile.first_name} {profile.last_name}</p>
               {tenantName && <p className="text-xs text-gray-300 truncate">{tenantName}</p>}
-              {locationName && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-300">
-                  <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{locationName}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 text-xs text-gray-300">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">
+                  {profile.location_id ? (locationName ?? '...') : 'Tenant-wide'}
+                </span>
+              </div>
               <span className="text-xs text-gray-400 uppercase">{profile.role}</span>
             </div>
           )}
