@@ -183,7 +183,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
 
   if (!user) return null;
 
-  const canEditRoleAndStatus = !isTargetManager && !isSelf;
+  const canEditRole = !isTargetManager && !isSelf;
   const showPermissions = watchedRole === 'STAFF';
 
   return (
@@ -252,7 +252,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
 
               <div>
                 <h3 className="font-semibold mb-2 text-gray-800">Role</h3>
-                {canEditRoleAndStatus ? (
+                {canEditRole ? (
                   <Controller
                     name="role"
                     control={control}
@@ -313,72 +313,84 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
               </div>
             </form>
 
-            <Card className="mt-6 border-red-500">
-              <CardHeader><CardTitle className="text-red-700">Danger Zone</CardTitle></CardHeader>
-              <CardContent className="space-y-4 divide-y">
-                {canEditRoleAndStatus && (
-                  <div className="flex justify-between items-center pt-4 first:pt-0">
-                    <div>
-                      <h4 className="font-semibold">Account Status</h4>
-                      <p className="text-sm text-gray-600">Inactivating an account will prevent the user from logging in.</p>
+            {!isSelf && (
+              <Card className="mt-6 border-red-500">
+                <CardHeader><CardTitle className="text-red-700">Danger Zone</CardTitle></CardHeader>
+                <CardContent>
+                  {isTargetManager ? (
+                    <Alert variant="info" className="mt-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Administrative Action Required</AlertTitle>
+                      <AlertDescription>
+                        Password resets and account status changes for managers must be handled by a System Administrator.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-4 divide-y">
+                      <div className="flex justify-between items-center pt-4 first:pt-0">
+                        <div>
+                          <h4 className="font-semibold">Account Status</h4>
+                          <p className="text-sm text-gray-600">Inactivating an account will prevent the user from logging in.</p>
+                        </div>
+                        <AlertDialog open={isDeactivateAlertOpen} onOpenChange={setDeactivateAlertOpen}>
+                          <AlertDialogTrigger asChild>
+                            {user.account_status === 'ACTIVE' ? (
+                              <Button variant="destructive">Inactivate User</Button>
+                            ) : (
+                              <Button variant="secondary">Reactivate User</Button>
+                            )}
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {user.account_status === 'ACTIVE'
+                                  ? "This will prevent the user from accessing the system. Their data will be preserved."
+                                  : "This will restore the user's access to the system."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => statusMutation.mutate(user.account_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                                disabled={statusMutation.isPending}
+                              >
+                                {statusMutation.isPending ? 'Updating...' : 'Confirm'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                      <div className="flex justify-between items-center pt-4 first:pt-0">
+                        <div>
+                          <h4 className="font-semibold">Force Password Reset</h4>
+                          <p className="text-sm text-gray-600">Generate a temporary password for the user.</p>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Reset Password</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will immediately invalidate the user's current password. You must securely provide them with the new temporary password.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => resetPasswordMutation.mutate()} disabled={resetPasswordMutation.isPending}>
+                                {resetPasswordMutation.isPending ? 'Resetting...' : 'Confirm Reset'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                    <AlertDialog open={isDeactivateAlertOpen} onOpenChange={setDeactivateAlertOpen}>
-                      <AlertDialogTrigger asChild>
-                        {user.account_status === 'ACTIVE' ? (
-                          <Button variant="destructive">Inactivate User</Button>
-                        ) : (
-                          <Button variant="secondary">Reactivate User</Button>
-                        )}
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {user.account_status === 'ACTIVE'
-                              ? "This will prevent the user from accessing the system. Their data will be preserved."
-                              : "This will restore the user's access to the system."}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => statusMutation.mutate(user.account_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                            disabled={statusMutation.isPending}
-                          >
-                            {statusMutation.isPending ? 'Updating...' : 'Confirm'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                )}
-                <div className="flex justify-between items-center pt-4 first:pt-0">
-                  <div>
-                    <h4 className="font-semibold">Force Password Reset</h4>
-                    <p className="text-sm text-gray-600">Generate a temporary password for the user.</p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isSelf || user.role !== 'STAFF'}>Reset Password</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will immediately invalidate the user's current password. You must securely provide them with the new temporary password.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => resetPasswordMutation.mutate()} disabled={resetPasswordMutation.isPending}>
-                          {resetPasswordMutation.isPending ? 'Resetting...' : 'Confirm Reset'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleDialogChange(false)}>Cancel</Button>
