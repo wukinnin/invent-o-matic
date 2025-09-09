@@ -82,16 +82,22 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
         locationId: user.location_id ? String(user.location_id) : 'NONE',
       });
     }
-    if (!isOpen) {
-      setTimeout(() => setTempPassword(null), 300);
-    }
-  }, [user, reset, isOpen]);
+  }, [user, reset]);
 
   useEffect(() => {
     if (watchedRole === 'MANAGER') {
       setValue('locationId', 'NONE');
     }
   }, [watchedRole, setValue]);
+
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+        setTimeout(() => {
+            setTempPassword(null);
+        }, 300);
+    }
+    onOpenChange(open);
+  };
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditUserFormValues) => {
@@ -122,7 +128,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
     onSuccess: () => {
       showSuccess('User updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['tenant_users', tenantId] });
-      onOpenChange(false);
+      handleDialogChange(false);
     },
     onError: (error) => {
       showError(`Failed to update user: ${error.message}`);
@@ -148,8 +154,8 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
   const resetPasswordMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('No user selected');
-      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
-        body: { user_id: user.id },
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: { target_user_id: user.id },
       });
       if (error) throw new Error(error.message);
       if (data.error) throw new Error(data.error);
@@ -181,7 +187,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
   const showPermissions = watchedRole === 'STAFF';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit User: {user.first_name} {user.last_name}</DialogTitle>
@@ -204,7 +210,7 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
               </Button>
             </div>
             <DialogFooter>
-              <Button onClick={() => onOpenChange(false)}>Done</Button>
+              <Button onClick={() => handleDialogChange(false)}>Done</Button>
             </DialogFooter>
           </div>
         ) : (
@@ -307,10 +313,10 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
               </div>
             </form>
 
-            {canEditRoleAndStatus && (
-              <Card className="mt-6 border-red-500">
-                <CardHeader><CardTitle className="text-red-700">Danger Zone</CardTitle></CardHeader>
-                <CardContent className="space-y-4 divide-y">
+            <Card className="mt-6 border-red-500">
+              <CardHeader><CardTitle className="text-red-700">Danger Zone</CardTitle></CardHeader>
+              <CardContent className="space-y-4 divide-y">
+                {canEditRoleAndStatus && (
                   <div className="flex justify-between items-center pt-4 first:pt-0">
                     <div>
                       <h4 className="font-semibold">Account Status</h4>
@@ -345,37 +351,37 @@ export const EditUserDialog = ({ isOpen, onOpenChange, user, tenantId }: EditUse
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
-                  <div className="flex justify-between items-center pt-4 first:pt-0">
-                    <div>
-                      <h4 className="font-semibold">Force Password Reset</h4>
-                      <p className="text-sm text-gray-600">Generate a temporary password for the user.</p>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={isSelf}>Reset Password</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will immediately invalidate the user's current password. You must securely provide them with the new temporary password.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => resetPasswordMutation.mutate()} disabled={resetPasswordMutation.isPending}>
-                            {resetPasswordMutation.isPending ? 'Resetting...' : 'Confirm Reset'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                )}
+                <div className="flex justify-between items-center pt-4 first:pt-0">
+                  <div>
+                    <h4 className="font-semibold">Force Password Reset</h4>
+                    <p className="text-sm text-gray-600">Generate a temporary password for the user.</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={isSelf || user.role !== 'STAFF'}>Reset Password</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will immediately invalidate the user's current password. You must securely provide them with the new temporary password.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => resetPasswordMutation.mutate()} disabled={resetPasswordMutation.isPending}>
+                          {resetPasswordMutation.isPending ? 'Resetting...' : 'Confirm Reset'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => handleDialogChange(false)}>Cancel</Button>
               <Button type="submit" form="edit-user-form" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Building, Settings, LogOut, ChevronsLeft } from 'lucide-react';
+import { LayoutDashboard, Building, Settings, LogOut, ChevronsLeft, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/contexts/SessionContext';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ const AdminSidebar = () => {
   const navLinks = [
     { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/admin/tenant-management', icon: Building, label: 'Tenant Management' },
+    { to: '/admin/users', icon: Users, label: 'User Management' },
     { to: '/admin/settings', icon: Settings, label: 'Settings' },
   ];
 

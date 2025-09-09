@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +60,7 @@ const TenantManagement = () => {
     },
   });
 
-  const handleManageClick = (tenant: Tenant) => {
+  const handleSettingsClick = (tenant: Tenant) => {
     setSelectedTenant(tenant);
     setManageDialogOpen(true);
   };
@@ -117,8 +118,11 @@ const TenantManagement = () => {
                         onCheckedChange={(checked) => updateStatusMutation.mutate({ id: tenant.id, is_active: checked })}
                         aria-label="Toggle tenant status"
                       />
-                      <Button variant="outline" size="sm" onClick={() => handleManageClick(tenant)}>
-                        Manage
+                      <Button asChild variant="outline" size="sm">
+                        <Link to={`/admin/users?tenantId=${tenant.id}`}>Manage Users</Link>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleSettingsClick(tenant)}>
+                        Settings
                       </Button>
                     </TableCell>
                   </TableRow>

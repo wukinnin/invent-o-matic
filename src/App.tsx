@@ -14,6 +14,7 @@ import ManagerRoute from "./components/auth/ManagerRoute";
 import AdminLayout from "./components/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import TenantManagement from "./pages/admin/TenantManagement";
+import AdminUserManagementPage from "./pages/admin/AdminUserManagement";
 import AdminSettingsPage from "./pages/admin/Settings";
 import TenantLayout from "./components/layouts/TenantLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -42,6 +43,7 @@ const App = () => (
               <Route element={<AdminLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/tenant-management" element={<TenantManagement />} />
+                <Route path="/admin/users" element={<AdminUserManagementPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
               </Route>
             </Route>
