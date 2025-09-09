@@ -22,6 +22,7 @@ import SuppliersPage from "./pages/suppliers/Suppliers";
 import TransactionsPage from "./pages/transactions/Transactions";
 import UserManagementPage from "./pages/users/UserManagement";
 import SettingsPage from "./pages/settings/Settings";
+import LocationsPage from "./pages/settings/Locations";
 import InactiveUserPage from "./pages/InactiveUser";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
                 
                 <Route element={<ManagerRoute />}>
                   <Route path="/users" element={<UserManagementPage />} />
+                  <Route path="/settings/locations" element={<LocationsPage />} />
                 </Route>
               </Route>
             </Route>
