@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ProvisionUserDialog } from '@/components/users/ProvisionUserDialog';
 import { EditUserDialog } from '@/components/users/EditUserDialog';
-import { cn } from '@/lib/utils';
+import { Location } from '@/components/settings/LocationsManager';
 
 export type TenantUser = {
   id: string;
@@ -35,6 +35,16 @@ const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
   return data as TenantUser[];
 };
 
+const fetchLocations = async (tenantId: number): Promise<Location[]> => {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('id, name')
+    .eq('tenant_id', tenantId)
+    .eq('is_archived', false);
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 const UserManagementPage = () => {
   const { profile } = useSession();
   const tenantId = profile?.tenant_id;
@@ -43,11 +53,25 @@ const UserManagementPage = () => {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TenantUser | null>(null);
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['tenant_users', tenantId],
     queryFn: () => fetchTenantUsers(tenantId!),
     enabled: !!tenantId,
   });
+
+  const { data: locations, isLoading: isLoadingLocations } = useQuery({
+    queryKey: ['locations', tenantId],
+    queryFn: () => fetchLocations(tenantId!),
+    enabled: !!tenantId,
+  });
+
+  const locationMap = useMemo(() => {
+    if (!locations) return new Map();
+    return new Map(locations.map(loc => [loc.id, loc.name]));
+  }, [locations]);
+
+  const hasLocations = locations && locations.length > 0;
+  const isLoading = isLoadingUsers || isLoadingLocations;
 
   const handleEdit = (user: TenantUser) => {
     setSelectedUser(user);
@@ -80,6 +104,7 @@ const UserManagementPage = () => {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>School ID</TableHead>
+                {hasLocations && <TableHead>Location</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -90,6 +115,7 @@ const UserManagementPage = () => {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    {hasLocations && <TableCell><Skeleton className="h-5 w-32" /></TableCell>}
                     <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                   </TableRow>
@@ -102,6 +128,11 @@ const UserManagementPage = () => {
                       {user.role === 'MANAGER' && <Badge variant="outline" className="ml-2">Manager</Badge>}
                     </TableCell>
                     <TableCell>{user.school_id}</TableCell>
+                    {hasLocations && (
+                      <TableCell>
+                        {user.location_id ? locationMap.get(user.location_id) ?? 'N/A' : 'Tenant-wide'}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge variant={getStatusVariant(user.account_status)}>
                         {user.account_status.replace('_', ' ')}
