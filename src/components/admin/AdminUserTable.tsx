@@ -48,7 +48,7 @@ interface AdminUserTableProps {
     tenantName?: string;
 }
 
-type SortKey = 'name' | 'school_id' | 'location';
+type SortKey = 'name' | 'school_id' | 'location' | 'role';
 type SortDirection = 'asc' | 'desc';
 
 const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
@@ -116,6 +116,9 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
             } else if (sortConfig.key === 'location') {
                 aValue = a.location_id ? locationMap.get(a.location_id) ?? '' : 'Tenant-wide';
                 bValue = b.location_id ? locationMap.get(b.location_id) ?? '' : 'Tenant-wide';
+            } else if (sortConfig.key === 'role') {
+                aValue = a.role.toLowerCase();
+                bValue = b.role.toLowerCase();
             } else {
                 return 0;
             }
@@ -165,7 +168,7 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
                                 <TableHead><Button variant="ghost" onClick={() => requestSort('name')} className="px-0 hover:bg-transparent">Name {getSortIcon('name')}</Button></TableHead>
                                 <TableHead><Button variant="ghost" onClick={() => requestSort('school_id')} className="px-0 hover:bg-transparent">School ID {getSortIcon('school_id')}</Button></TableHead>
                                 {hasLocations && <TableHead><Button variant="ghost" onClick={() => requestSort('location')} className="px-0 hover:bg-transparent">Location {getSortIcon('location')}</Button></TableHead>}
-                                <TableHead>Role</TableHead>
+                                <TableHead><Button variant="ghost" onClick={() => requestSort('role')} className="px-0 hover:bg-transparent">Role {getSortIcon('role')}</Button></TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>

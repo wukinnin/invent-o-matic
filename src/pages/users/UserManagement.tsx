@@ -46,7 +46,7 @@ const fetchLocations = async (tenantId: number): Promise<Location[]> => {
   return data;
 };
 
-type SortKey = 'name' | 'school_id' | 'location';
+type SortKey = 'name' | 'school_id' | 'location' | 'role';
 type SortDirection = 'asc' | 'desc';
 
 const UserManagementPage = () => {
@@ -90,6 +90,9 @@ const UserManagementPage = () => {
         } else if (sortConfig.key === 'location') {
           aValue = a.location_id ? locationMap.get(a.location_id) ?? '' : 'Tenant-wide';
           bValue = b.location_id ? locationMap.get(b.location_id) ?? '' : 'Tenant-wide';
+        } else if (sortConfig.key === 'role') {
+          aValue = a.role.toLowerCase();
+          bValue = b.role.toLowerCase();
         } else {
           return 0;
         }
@@ -166,6 +169,11 @@ const UserManagementPage = () => {
                     </Button>
                   </TableHead>
                 )}
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('role')} className="px-0 hover:bg-transparent">
+                    Role {getSortIcon('role')}
+                  </Button>
+                </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -177,6 +185,7 @@ const UserManagementPage = () => {
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     {hasLocations && <TableCell><Skeleton className="h-5 w-32" /></TableCell>}
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                   </TableRow>
@@ -186,7 +195,6 @@ const UserManagementPage = () => {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.first_name} {user.last_name}
-                      {user.role === 'MANAGER' && <Badge variant="outline" className="ml-2">Manager</Badge>}
                     </TableCell>
                     <TableCell>{user.school_id}</TableCell>
                     {hasLocations && (
@@ -194,6 +202,9 @@ const UserManagementPage = () => {
                         {user.location_id ? locationMap.get(user.location_id) ?? 'N/A' : 'Tenant-wide'}
                       </TableCell>
                     )}
+                    <TableCell>
+                      <Badge variant={user.role === 'MANAGER' ? 'default' : 'secondary'}>{user.role}</Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(user.account_status)}>
                         {user.account_status.replace('_', ' ')}
