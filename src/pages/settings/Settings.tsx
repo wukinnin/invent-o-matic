@@ -3,6 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { TenantSettings } from '@/components/settings/TenantSettings';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const SettingsPage = () => {
   const { profile } = useSession();
@@ -30,7 +33,20 @@ const SettingsPage = () => {
         
         {isManager && (
           <TabsContent value="tenant" className="pt-6">
-            <TenantSettings />
+            <div className="space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Locations Management</CardTitle>
+                  <CardDescription>Manage distinct inventory locations or sub-departments within your tenant.</CardDescription>
+                </CardHeader>
+                <CardFooter>
+                  <Button asChild>
+                    <Link to="/settings/locations">Manage Locations</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+              <TenantSettings />
+            </div>
           </TabsContent>
         )}
       </Tabs>
