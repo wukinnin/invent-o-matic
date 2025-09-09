@@ -23,50 +23,71 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id } = await req.json();
+    const { user_id: targetUserId } = await req.json();
     const authHeader = req.headers.get('Authorization');
 
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (!user_id) {
+    if (!targetUserId) {
       return new Response(JSON.stringify({ error: 'Missing user_id' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user: invoker } } = await supabaseClient.auth.getUser();
-    if (!invoker) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: invokerProfile, error: profileError } = await supabaseClient
-      .from('users')
-      .select('role')
-      .eq('id', invoker.id)
-      .single();
-
-    if (profileError || !invokerProfile) {
-      return new Response(JSON.stringify({ error: 'Could not verify invoker role' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (invokerProfile.role !== 'MANAGER' && invokerProfile.role !== 'ADMIN') {
-      return new Response(JSON.stringify({ error: 'Forbidden: Insufficient privileges' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
+    // Use the service role key to create an admin client to bypass RLS for internal checks
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get the invoker's user object from the provided auth token
+    const { data: { user: invoker } } = await createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+    ).auth.getUser();
+
+    if (!invoker) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Fetch profiles for both invoker and target user using the admin client
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from('users')
+      .select('id, role, tenant_id')
+      .in('id', [invoker.id, targetUserId]);
+
+    if (profilesError || !profiles || profiles.length === 0) {
+      console.error('Error fetching profiles:', profilesError);
+      return new Response(JSON.stringify({ error: 'Could not retrieve user profiles.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const invokerProfile = profiles.find(p => p.id === invoker.id);
+    const targetProfile = profiles.find(p => p.id === targetUserId);
+
+    if (!invokerProfile || !targetProfile) {
+      return new Response(JSON.stringify({ error: 'Invoker or target user not found.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Security Check 1: Invoker must be a Manager or Admin
+    if (invokerProfile.role !== 'MANAGER' && invokerProfile.role !== 'ADMIN') {
+      return new Response(JSON.stringify({ error: 'Forbidden: Insufficient privileges.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Security Check 2: Users must be in the same tenant
+    if (invokerProfile.tenant_id !== targetProfile.tenant_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden: Cannot reset password for a user in another tenant.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Security Check 3: A Manager cannot reset another Manager's password
+    if (invokerProfile.role === 'MANAGER' && targetProfile.role === 'MANAGER') {
+      return new Response(JSON.stringify({ error: 'Forbidden: Managers cannot reset passwords for other managers.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // All checks passed, proceed with password reset
     const tempPassword = generatePassword();
 
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-      user_id,
+      targetUserId,
       { password: tempPassword }
     );
 
@@ -78,7 +99,7 @@ serve(async (req) => {
     const { error: dbError } = await supabaseAdmin
       .from('users')
       .update({ account_status: 'FORCE_PASSWORD_RESET' })
-      .eq('id', user_id);
+      .eq('id', targetUserId);
 
     if (dbError) {
       console.error('DB user update error:', dbError);
