@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Copy, KeyRound, ArrowUp, ArrowDown } from 'lucide-react';
+import { Copy, KeyRound } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,19 +27,14 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { showError, showSuccess } from '@/utils/toast';
-import { cn } from '@/lib/utils';
 
 type TenantUser = {
   id: string;
   first_name: string;
   last_name: string;
-  school_id: string;
   role: 'STAFF' | 'MANAGER';
   account_status: string;
-  locations: { name: string } | null;
 };
-
-type SortKey = 'name' | 'school_id' | 'role' | 'account_status' | 'location';
 
 interface AdminUserTableProps {
     tenantId: number;
@@ -47,10 +42,7 @@ interface AdminUserTableProps {
 }
 
 const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, first_name, last_name, school_id, role, account_status, locations(name)')
-      .eq('tenant_id', tenantId);
+    const { data, error } = await supabase.from('users').select('id, first_name, last_name, role, account_status').eq('tenant_id', tenantId);
     if (error) throw new Error(error.message);
     return data;
 };
@@ -58,65 +50,11 @@ const fetchTenantUsers = async (tenantId: number): Promise<TenantUser[]> => {
 export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) => {
     const [tempPassword, setTempPassword] = useState<string | null>(null);
     const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
-    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
     
     const { data: users, isLoading } = useQuery({
         queryKey: ['admin_tenant_users', tenantId],
         queryFn: () => fetchTenantUsers(tenantId),
     });
-
-    const hasLocations = useMemo(() => users?.some(user => user.locations), [users]);
-
-    const sortedUsers = useMemo(() => {
-        if (!users) return [];
-        const sorted = [...users];
-        sorted.sort((a, b) => {
-            let aValue: string | null = '';
-            let bValue: string | null = '';
-
-            switch (sortConfig.key) {
-                case 'name':
-                    aValue = `${a.first_name} ${a.last_name}`;
-                    bValue = `${b.first_name} ${b.last_name}`;
-                    break;
-                case 'location':
-                    aValue = a.locations?.name ?? null;
-                    bValue = b.locations?.name ?? null;
-                    break;
-                default:
-                    aValue = a[sortConfig.key as Exclude<SortKey, 'name' | 'location'>];
-                    bValue = b[sortConfig.key as Exclude<SortKey, 'name' | 'location'>];
-            }
-
-            if (aValue === null) return 1;
-            if (bValue === null) return -1;
-            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-        return sorted;
-    }, [users, sortConfig]);
-
-    const requestSort = (key: SortKey) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const SortableHeader = ({ children, sortKey }: { children: React.ReactNode, sortKey: SortKey }) => {
-        const isSorted = sortConfig.key === sortKey;
-        const Icon = sortConfig.direction === 'asc' ? ArrowUp : ArrowDown;
-        return (
-            <TableHead className="cursor-pointer select-none" onClick={() => requestSort(sortKey)}>
-                <div className="flex items-center space-x-1">
-                    <span>{children}</span>
-                    {isSorted && <Icon className="h-4 w-4" />}
-                </div>
-            </TableHead>
-        );
-    };
 
     const passwordResetMutation = useMutation({
         mutationFn: async (targetUserId: string) => {
@@ -154,25 +92,21 @@ export const AdminUserTable = ({ tenantId, tenantName }: AdminUserTableProps) =>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <SortableHeader sortKey="name">Name</SortableHeader>
-                                <SortableHeader sortKey="school_id">School ID</SortableHeader>
-                                {hasLocations && <SortableHeader sortKey="location">Location</SortableHeader>}
-                                <SortableHeader sortKey="role">Role</SortableHeader>
-                                <SortableHeader sortKey="account_status">Status</SortableHeader>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={hasLocations ? 6 : 5}><Skeleton className="h-20 w-full" /></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4}><Skeleton className="h-20 w-full" /></TableCell></TableRow>
                             ) : (
-                                sortedUsers?.map(user => (
+                                users?.map(user => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.first_name} {user.last_name}</TableCell>
-                                        <TableCell>{user.school_id}</TableCell>
-                                        {hasLocations && <TableCell>{user.locations?.name || <span className="text-gray-400">N/A</span>}</TableCell>}
                                         <TableCell><Badge variant={user.role === 'MANAGER' ? 'default' : 'secondary'}>{user.role}</Badge></TableCell>
-                                        <TableCell><Badge variant="outline" className="capitalize">{user.account_status.replace(/_/g, ' ')}</Badge></TableCell>
+                                        <TableCell><Badge variant="outline">{user.account_status.replace(/_/g, ' ')}</Badge></TableCell>
                                         <TableCell className="text-right">
                                             {user.role === 'MANAGER' ? (
                                                 <AlertDialog>
