@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProvisionUserDialog } from '@/components/users/ProvisionUserDialog';
 import { EditUserDialog } from '@/components/users/EditUserDialog';
 import { Location } from '@/components/settings/LocationsManager';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 
 export type TenantUser = {
   id: string;
@@ -45,6 +46,9 @@ const fetchLocations = async (tenantId: number): Promise<Location[]> => {
   return data;
 };
 
+type SortKey = 'name' | 'school_id' | 'location';
+type SortDirection = 'asc' | 'desc';
+
 const UserManagementPage = () => {
   const { profile } = useSession();
   const tenantId = profile?.tenant_id;
@@ -52,6 +56,7 @@ const UserManagementPage = () => {
   const [isProvisionDialogOpen, setProvisionDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TenantUser | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'name', direction: 'asc' });
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['tenant_users', tenantId],
@@ -70,12 +75,54 @@ const UserManagementPage = () => {
     return new Map(locations.map(loc => [loc.id, loc.name]));
   }, [locations]);
 
+  const sortedUsers = useMemo(() => {
+    if (!users) return [];
+    const sortableUsers = [...users];
+    if (sortConfig) {
+      sortableUsers.sort((a, b) => {
+        let aValue: string | number, bValue: string | number;
+        if (sortConfig.key === 'name') {
+          aValue = `${a.first_name} ${a.last_name}`.toLowerCase();
+          bValue = `${b.first_name} ${b.last_name}`.toLowerCase();
+        } else if (sortConfig.key === 'school_id') {
+          aValue = a.school_id;
+          bValue = b.school_id;
+        } else if (sortConfig.key === 'location') {
+          aValue = a.location_id ? locationMap.get(a.location_id) ?? '' : 'Tenant-wide';
+          bValue = b.location_id ? locationMap.get(b.location_id) ?? '' : 'Tenant-wide';
+        } else {
+          return 0;
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableUsers;
+  }, [users, sortConfig, locationMap]);
+
   const hasLocations = locations && locations.length > 0;
   const isLoading = isLoadingUsers || isLoadingLocations;
 
   const handleEdit = (user: TenantUser) => {
     setSelectedUser(user);
     setEditDialogOpen(true);
+  };
+
+  const requestSort = (key: SortKey) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortConfig?.key !== key) return null;
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="ml-2 h-4 w-4 inline" /> 
+      : <ArrowDown className="ml-2 h-4 w-4 inline" />;
   };
 
   const getStatusVariant = (status: TenantUser['account_status']) => {
@@ -102,9 +149,23 @@ const UserManagementPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>School ID</TableHead>
-                {hasLocations && <TableHead>Location</TableHead>}
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('name')} className="px-0 hover:bg-transparent">
+                    Name {getSortIcon('name')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('school_id')} className="px-0 hover:bg-transparent">
+                    School ID {getSortIcon('school_id')}
+                  </Button>
+                </TableHead>
+                {hasLocations && (
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('location')} className="px-0 hover:bg-transparent">
+                      Location {getSortIcon('location')}
+                    </Button>
+                  </TableHead>
+                )}
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -121,7 +182,7 @@ const UserManagementPage = () => {
                   </TableRow>
                 ))
               ) : (
-                users?.map((user) => (
+                sortedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.first_name} {user.last_name}
