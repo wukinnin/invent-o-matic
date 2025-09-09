@@ -25,6 +25,7 @@ import UserManagementPage from "./pages/users/UserManagement";
 import SettingsPage from "./pages/settings/Settings";
 import LocationsPage from "./pages/settings/Locations";
 import InactiveUserPage from "./pages/InactiveUser";
+import LoadingOverlay from "./components/LoadingOverlay";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <SessionProvider>
+          <LoadingOverlay />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/inactive" element={<InactiveUserPage />} />
