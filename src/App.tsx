@@ -23,6 +23,7 @@ import TransactionsPage from "./pages/transactions/Transactions";
 import UserManagementPage from "./pages/users/UserManagement";
 import SettingsPage from "./pages/settings/Settings";
 import InactiveUserPage from "./pages/InactiveUser";
+import LocationsPage from "./pages/locations/Locations";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
                 
                 <Route element={<ManagerRoute />}>
                   <Route path="/users" element={<UserManagementPage />} />
+                  <Route path="/locations" element={<LocationsPage />} />
                 </Route>
               </Route>
             </Route>

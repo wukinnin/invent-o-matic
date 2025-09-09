@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showError, showSuccess } from '@/utils/toast';
 import { Copy } from 'lucide-react';
@@ -20,12 +20,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const provisionUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   schoolId: z.string().regex(/^\d{8}$/, 'School ID must be 8 digits'),
   isManager: z.boolean().default(false),
+  locationId: z.string().optional(),
 });
 
 type ProvisionUserFormValues = z.infer<typeof provisionUserSchema>;
@@ -36,6 +38,12 @@ interface ProvisionUserDialogProps {
   tenantId: number;
 }
 
+const fetchLocations = async (tenantId: number) => {
+  const { data, error } = await supabase.from('locations').select('id, name').eq('tenant_id', tenantId).eq('is_archived', false);
+  if (error) throw error;
+  return data;
+};
+
 export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: ProvisionUserDialogProps) => {
   const queryClient = useQueryClient();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
@@ -45,9 +53,18 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProvisionUserFormValues>({
     resolver: zodResolver(provisionUserSchema),
+  });
+
+  const isManager = watch('isManager');
+
+  const { data: locations, isLoading: isLoadingLocations } = useQuery({
+    queryKey: ['locations', tenantId],
+    queryFn: () => fetchLocations(tenantId),
+    enabled: isOpen && !isManager,
   });
 
   const mutation = useMutation({
@@ -59,6 +76,7 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
           last_name: data.lastName,
           school_id: data.schoolId,
           role: data.isManager ? 'MANAGER' : 'STAFF',
+          location_id: data.isManager ? null : (data.locationId ? parseInt(data.locationId) : null),
         },
       });
       if (error) throw new Error(error.message);
@@ -140,9 +158,37 @@ export const ProvisionUserDialog = ({ isOpen, onOpenChange, tenantId }: Provisio
               {errors.schoolId && <p className="text-sm text-red-600">{errors.schoolId.message}</p>}
             </div>
             <div className="flex items-center space-x-2 pt-2">
-              <Switch id="isManager" onCheckedChange={(checked) => reset({ ...control._formValues, isManager: checked })} />
+              <Controller
+                name="isManager"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="isManager"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
               <Label htmlFor="isManager">Make this user a Manager</Label>
             </div>
+            {!isManager && (
+              <div className="space-y-2">
+                <Label htmlFor="locationId">Location (Optional)</Label>
+                <Controller
+                  name="locationId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingLocations}>
+                      <SelectTrigger><SelectValue placeholder="Assign to a location..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No Location (Tenant-wide)</SelectItem>
+                        {locations?.map((loc: {id: number, name: string}) => <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={handleDialogClose}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
